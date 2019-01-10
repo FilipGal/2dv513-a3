@@ -23,13 +23,6 @@ export class Result extends Component {
     return (
       <form className="form-inline">
         <div className="container">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={this.requestMovie}
-          >
-            Search
-          </button>
           {contentLoadedSuccessfully ? (
             <div>
               <h1>Result</h1>
