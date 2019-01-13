@@ -27,7 +27,7 @@ const ResultsTable = props => (
 
 function renderData(data) {
   return data.map(movie => (
-    <tr>
+    <tr key={movie.movie_id}>
       <td>{movie.title}</td> 
       <td>{movie.release_date.substring(0, 10)}</td>
       <td>{movie.runtime}</td>
