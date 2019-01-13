@@ -27,6 +27,18 @@ function get(req, res, next) {
   });
 }
 
+function getGenres(req, res, next) {
+  if (!connection) { connection.connect(); }
+
+  const sqlQuery = `SELECT name FROM Genre ORDER BY name ASC`;
+
+  connection.query(sqlQuery, (error, result, fields) => {
+    if (error) return res.send('Bad request');
+
+    return res.send(result);
+  });
+}
+
 function post(req, res, next) {
   res.send('POST request');
 }
@@ -42,7 +54,7 @@ function prepareResult(result) {
 
     if (isFirstItem || isNewMovie) {
       prepared.push(row);
-      prepared[prepared.length - 1].genres = [];
+      prepared[prepared.length - 1].genres = [prepared[prepared.length - 1].genre];
       delete prepared[prepared.length - 1].genre;
 
       return;
@@ -78,27 +90,37 @@ const getAllDataQuery = `
   ORDER BY movie_id, genre, actor
 `;
 
-function generateSqlQueryFromRequestQuery(requestQuery) {
-  const wantsToFindsWithSpecificTitle = requestQuery.hasOwnProperty('title');
-  const wantsToFindsWithSpecificActor = requestQuery.hasOwnProperty('actor');
-  const wantsToFindsWithSpecificTitleAndActor = wantsToFindsWithSpecificTitle && wantsToFindsWithSpecificActor;
+function filterWithGenreIfRequested(requestQuery) {
+  return requestQuery.hasOwnProperty('genre')
+    ? `AND m.genre LIKE "%${requestQuery.genre}%"`
+    : '';
+}
 
-  if (wantsToFindsWithSpecificTitleAndActor) {
+function generateSqlQueryFromRequestQuery(requestQuery) {
+  const wantsToFindWithSpecificTitle = requestQuery.hasOwnProperty('title');
+  const wantsToFindWithSpecificActor = requestQuery.hasOwnProperty('actor');
+  
+  const wantsToFindWithSpecificTitleAndActor = wantsToFindWithSpecificTitle && wantsToFindWithSpecificActor;
+
+  if (wantsToFindWithSpecificTitleAndActor) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
       WHERE
         m.actor LIKE "%${requestQuery.actor}%" AND
         m.title LIKE "%${requestQuery.title}%"
+        ${filterWithGenreIfRequested(requestQuery)}
     `;
-  } else if (wantsToFindsWithSpecificTitle) {
+  } else if (wantsToFindWithSpecificTitle) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
       WHERE m.title LIKE "%${requestQuery.title}%"
+      ${filterWithGenreIfRequested(requestQuery)}
     `;
-  } else if (wantsToFindsWithSpecificActor) {
+  } else if (wantsToFindWithSpecificActor) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
       WHERE m.actor LIKE "%${requestQuery.actor}%"
+      ${filterWithGenreIfRequested(requestQuery)}
     `;
   } else {
     sqlQuery = getAllDataQuery;
@@ -109,5 +131,6 @@ function generateSqlQueryFromRequestQuery(requestQuery) {
 
 module.exports = {
   get,
+  getGenres,
   post
 };

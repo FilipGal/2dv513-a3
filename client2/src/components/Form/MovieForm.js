@@ -7,12 +7,23 @@ export default class MovieForm extends React.Component {
     super();
 
     this.state = {
+      genres: [],
       radioRuntime: 'atLeast',
       radioScore: 'atLeast',
     };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleClick = this.handleClick.bind(this);
+    this.setGenresState = this.setGenresState.bind(this);
+  }
+
+  componentDidMount() {
+    axios.get('/api/getGenres').then(this.setGenresState);
+  }
+
+  setGenresState(response) {
+    const formattedData = response.data.map(genre => genre.name);
+    this.setState({ genres: formattedData})
   }
 
   render() {
@@ -26,14 +37,13 @@ export default class MovieForm extends React.Component {
           <Label for="actor">Actor</Label>
           <Input type="text" name="actor" id="actor" onChange={this.handleChange} placeholder="Actor" />
         </FormGroup>
-        {/* Below should map from database genres */}
-        {/* <FormGroup>
-        <Label for="genre">Genre</Label>
-        <Input type="select" name="genre" id="genre">
-          <option>Action</option>
-          <option>Adventure</option>
-        </Input>
-      </FormGroup> */}
+        <FormGroup>
+          <Label for="genre">Genre</Label>
+          <Input type="select" name="genre" id="genre" onChange={this.handleChange}>
+            <option>--Select Genre--</option>
+            {this.state.genres.map(genre => <option key={genre}>{genre}</option>)}
+          </Input>
+        </FormGroup>
         <FormGroup>
           <Label for="runtime">Runtime</Label>
           <FormGroup check>
@@ -79,7 +89,11 @@ export default class MovieForm extends React.Component {
     let url = '/api?';
 
     for (let key of Object.keys(this.state)) {
-      if (this.state[key] === '') { continue; }
+      const isNoValueKey = this.state[key] === '';
+      const isGenresKey = key === 'genres';
+      const isNonSelectedGenre = key === 'genre' && this.state[key] === '--Select Genre--';
+
+      if (isNoValueKey || isGenresKey || isNonSelectedGenre) { continue; }
 
       url += `${key}=${this.state[key]}&`;
     }
