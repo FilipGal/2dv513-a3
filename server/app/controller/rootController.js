@@ -96,10 +96,32 @@ function filterWithGenreIfRequested(requestQuery) {
     : '';
 }
 
+function filterWithRuntimeIfRequested(requestQuery) {
+  const isRuntimeNotRequested = !requestQuery.hasOwnProperty('runtime');
+  const isRuntimeNotANumber = Number(requestQuery.runtime) === NaN;
+
+  if (isRuntimeNotRequested || isRuntimeNotANumber) { return ''; }
+
+  return requestQuery.radioRuntime === 'atLeast'
+    ? `AND m.runtime >= "${requestQuery.runtime}"`
+    : `AND m.runtime <= "${requestQuery.runtime}"`;
+}
+
+function filterWithScoreIfRequested(requestQuery) {
+  const isScoreNotRequested = !requestQuery.hasOwnProperty('score');
+  const isScoreNotANumber = Number(requestQuery.score) === NaN;
+
+  if (isScoreNotRequested || isScoreNotANumber) { return ''; }
+
+  return requestQuery.radioScore === 'atLeast'
+    ? `AND m.vote_average >= "${requestQuery.score}"`
+    : `AND m.vote_average <= "${requestQuery.score}"`;
+}
+
 function generateSqlQueryFromRequestQuery(requestQuery) {
   const wantsToFindWithSpecificTitle = requestQuery.hasOwnProperty('title');
   const wantsToFindWithSpecificActor = requestQuery.hasOwnProperty('actor');
-  
+
   const wantsToFindWithSpecificTitleAndActor = wantsToFindWithSpecificTitle && wantsToFindWithSpecificActor;
 
   if (wantsToFindWithSpecificTitleAndActor) {
@@ -109,18 +131,24 @@ function generateSqlQueryFromRequestQuery(requestQuery) {
         m.actor LIKE "%${requestQuery.actor}%" AND
         m.title LIKE "%${requestQuery.title}%"
         ${filterWithGenreIfRequested(requestQuery)}
+        ${filterWithRuntimeIfRequested(requestQuery)}
+        ${filterWithScoreIfRequested(requestQuery)}
     `;
   } else if (wantsToFindWithSpecificTitle) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
       WHERE m.title LIKE "%${requestQuery.title}%"
       ${filterWithGenreIfRequested(requestQuery)}
+      ${filterWithRuntimeIfRequested(requestQuery)}
+      ${filterWithScoreIfRequested(requestQuery)}
     `;
   } else if (wantsToFindWithSpecificActor) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
       WHERE m.actor LIKE "%${requestQuery.actor}%"
       ${filterWithGenreIfRequested(requestQuery)}
+      ${filterWithRuntimeIfRequested(requestQuery)}
+      ${filterWithScoreIfRequested(requestQuery)}
     `;
   } else {
     sqlQuery = getAllDataQuery;
