@@ -1,0 +1,8 @@
+.App {
+  width: 70vw;
+  margin: 20px auto;
+}
+
+.App > legend {
+  margin-top: 50px;
+}
