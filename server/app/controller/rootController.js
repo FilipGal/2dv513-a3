@@ -39,10 +39,6 @@ function getGenres(req, res, next) {
   });
 }
 
-function post(req, res, next) {
-  res.send('POST request');
-}
-
 function prepareResult(result) {
   const prepared = [];
 
@@ -90,34 +86,6 @@ const getAllDataQuery = `
   ORDER BY movie_id, genre, actor
 `;
 
-function filterWithGenreIfRequested(requestQuery) {
-  return requestQuery.hasOwnProperty('genre')
-    ? `AND m.genre LIKE "%${requestQuery.genre}%"`
-    : '';
-}
-
-function filterWithRuntimeIfRequested(requestQuery) {
-  const isRuntimeNotRequested = !requestQuery.hasOwnProperty('runtime');
-  const isRuntimeNotANumber = Number(requestQuery.runtime) === NaN;
-
-  if (isRuntimeNotRequested || isRuntimeNotANumber) { return ''; }
-
-  return requestQuery.radioRuntime === 'atLeast'
-    ? `AND m.runtime >= "${requestQuery.runtime}"`
-    : `AND m.runtime <= "${requestQuery.runtime}"`;
-}
-
-function filterWithScoreIfRequested(requestQuery) {
-  const isScoreNotRequested = !requestQuery.hasOwnProperty('score');
-  const isScoreNotANumber = Number(requestQuery.score) === NaN;
-
-  if (isScoreNotRequested || isScoreNotANumber) { return ''; }
-
-  return requestQuery.radioScore === 'atLeast'
-    ? `AND m.vote_average >= "${requestQuery.score}"`
-    : `AND m.vote_average <= "${requestQuery.score}"`;
-}
-
 function generateSqlQueryFromRequestQuery(requestQuery) {
   const wantsToFindWithSpecificTitle = requestQuery.hasOwnProperty('title');
   const wantsToFindWithSpecificActor = requestQuery.hasOwnProperty('actor');
@@ -154,11 +122,51 @@ function generateSqlQueryFromRequestQuery(requestQuery) {
     sqlQuery = getAllDataQuery;
   }
 
+  const wantsToFindOnlyHighestRated = requestQuery.highestRated === 'true';
+
+  if (wantsToFindOnlyHighestRated) {
+    sqlQuery = `
+      SELECT *
+      FROM (${sqlQuery}) m
+      WHERE m.vote_average IN (
+        SELECT MAX(vote_average)
+        FROM (${sqlQuery}) n
+      )
+    `;
+  }
+
   return sqlQuery;
+}
+
+function filterWithGenreIfRequested(requestQuery) {
+  return requestQuery.hasOwnProperty('genre')
+    ? `AND m.genre LIKE "%${requestQuery.genre}%"`
+    : '';
+}
+
+function filterWithRuntimeIfRequested(requestQuery) {
+  const isRuntimeNotRequested = !requestQuery.hasOwnProperty('runtime');
+  const isRuntimeNotANumber = Number(requestQuery.runtime) === NaN;
+
+  if (isRuntimeNotRequested || isRuntimeNotANumber) { return ''; }
+
+  return requestQuery.radioRuntime === 'atLeast'
+    ? `AND m.runtime >= "${requestQuery.runtime}"`
+    : `AND m.runtime <= "${requestQuery.runtime}"`;
+}
+
+function filterWithScoreIfRequested(requestQuery) {
+  const isScoreNotRequested = !requestQuery.hasOwnProperty('score');
+  const isScoreNotANumber = Number(requestQuery.score) === NaN;
+
+  if (isScoreNotRequested || isScoreNotANumber) { return ''; }
+
+  return requestQuery.radioScore === 'atLeast'
+    ? `AND m.vote_average >= "${requestQuery.score}"`
+    : `AND m.vote_average <= "${requestQuery.score}"`;
 }
 
 module.exports = {
   get,
-  getGenres,
-  post
+  getGenres
 };

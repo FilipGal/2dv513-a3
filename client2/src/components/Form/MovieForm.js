@@ -10,6 +10,7 @@ export default class MovieForm extends React.Component {
       genres: [],
       radioRuntime: 'atLeast',
       radioScore: 'atLeast',
+      highestRated: false,
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -23,7 +24,7 @@ export default class MovieForm extends React.Component {
 
   setGenresState(response) {
     const formattedData = response.data.map(genre => genre.name);
-    this.setState({ genres: formattedData})
+    this.setState({ genres: formattedData })
   }
 
   render() {
@@ -76,13 +77,25 @@ export default class MovieForm extends React.Component {
           </FormGroup>
           <Input type="text" name="score" id="score" onChange={this.handleChange} placeholder="Score between 0 and 10" />
         </FormGroup>
+        <FormGroup check>
+          <Label check>
+            <Input type="checkbox" name="highestRated" id="highestRated" onChange={this.handleChange} />{' '}
+            Show only highest rated movie(s) of chosen data.
+          </Label>
+        </FormGroup>
         <Button onClick={this.handleClick}>Submit</Button>
       </Form>
     );
   }
 
   handleChange(event) {
-    this.setState({ [event.target.name]: event.target.value })
+    const { name, value, type } = event.target;
+
+    if (type === 'checkbox') {
+      this.setState(prevState => ({ [name]: !prevState[name] }));
+    } else {
+      this.setState({ [name]: value });
+    }
   }
 
   handleClick() {
