@@ -1,4 +1,3 @@
-const axios = require('axios');
 const dotenv = require('dotenv');
 const mysql = require('mysql');
 
@@ -14,12 +13,12 @@ const dbConfig = {
 const connection = mysql.createConnection(dbConfig);
 connection.connect();
 
-function get(req, res, next) {
+function get(req, res) {
   if (!connection) { connection.connect(); }
 
   const sqlQuery = generateSqlQueryFromRequestQuery(req.query);
 
-  connection.query(sqlQuery, (error, result, fields) => {
+  connection.query(sqlQuery, (error, result) => {
     if (error) return res.send('Bad request');
 
     const preparedResult = prepareResult(result);
@@ -27,12 +26,12 @@ function get(req, res, next) {
   });
 }
 
-function getGenres(req, res, next) {
+function getGenres(req, res) {
   if (!connection) { connection.connect(); }
 
   const sqlQuery = `SELECT name FROM Genre ORDER BY name ASC`;
 
-  connection.query(sqlQuery, (error, result, fields) => {
+  connection.query(sqlQuery, (error, result) => {
     if (error) return res.send('Bad request');
 
     return res.send(result);
@@ -98,25 +97,19 @@ function generateSqlQueryFromRequestQuery(requestQuery) {
       WHERE
         m.actor LIKE "%${requestQuery.actor}%" AND
         m.title LIKE "%${requestQuery.title}%"
-        ${filterWithGenreIfRequested(requestQuery)}
-        ${filterWithRuntimeIfRequested(requestQuery)}
-        ${filterWithScoreIfRequested(requestQuery)}
+        ${filterAsRequested(requestQuery)}
     `;
   } else if (wantsToFindWithSpecificTitle) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
       WHERE m.title LIKE "%${requestQuery.title}%"
-      ${filterWithGenreIfRequested(requestQuery)}
-      ${filterWithRuntimeIfRequested(requestQuery)}
-      ${filterWithScoreIfRequested(requestQuery)}
+      ${filterAsRequested(requestQuery)}
     `;
   } else if (wantsToFindWithSpecificActor) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
       WHERE m.actor LIKE "%${requestQuery.actor}%"
-      ${filterWithGenreIfRequested(requestQuery)}
-      ${filterWithRuntimeIfRequested(requestQuery)}
-      ${filterWithScoreIfRequested(requestQuery)}
+      ${filterAsRequested(requestQuery)}
     `;
   } else {
     sqlQuery = getAllDataQuery;
@@ -136,6 +129,14 @@ function generateSqlQueryFromRequestQuery(requestQuery) {
   }
 
   return sqlQuery;
+}
+
+function filterAsRequested(requestQuery) {
+  return `
+    ${filterWithGenreIfRequested(requestQuery)}
+    ${filterWithRuntimeIfRequested(requestQuery)}
+    ${filterWithScoreIfRequested(requestQuery)}
+  `
 }
 
 function filterWithGenreIfRequested(requestQuery) {
