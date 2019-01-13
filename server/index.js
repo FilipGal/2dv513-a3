@@ -1,5 +1,8 @@
+const dotenv = require('dotenv');
 const http = require('http');
 const app = require('./config/app');
+
+dotenv.config({ path: 'variables.env' });
 
 const server = http.createServer(app);
 
