@@ -91,6 +91,8 @@ function generateSqlQueryFromRequestQuery(requestQuery) {
 
   const wantsToFindWithSpecificTitleAndActor = wantsToFindWithSpecificTitle && wantsToFindWithSpecificActor;
 
+  let sqlQuery = '';
+
   if (wantsToFindWithSpecificTitleAndActor) {
     sqlQuery = `
       SELECT * FROM (${getAllDataQuery}) m
